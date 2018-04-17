@@ -1,6 +1,6 @@
 #import "BTCQRCode.h"
 #import <AVFoundation/AVFoundation.h>
-
+//test 
 #if TARGET_OS_IPHONE
 @interface BTCQRCodeScannerView : UIView <AVCaptureMetadataOutputObjectsDelegate>
 @property (nonatomic, strong) void(^detectionBlock)(NSString* message);
