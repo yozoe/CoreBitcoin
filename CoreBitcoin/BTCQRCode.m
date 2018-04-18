@@ -10,6 +10,7 @@
 @property (nonatomic, assign) AVCaptureDevicePosition cameraPosition;
 @property (nonatomic, assign) AVCaptureVideoOrientation cameraOrientation;
 - (id) initWithDetectionBlock:(void(^)(NSString* message))detectionBlock;
+
 @end
 #endif
 

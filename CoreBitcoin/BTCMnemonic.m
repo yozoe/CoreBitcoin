@@ -379,9 +379,22 @@ static inline NSUInteger BTCMnemonicIntegerFrom11Bits(uint8_t* buf, int bitIndex
 + (NSArray*) wordListForType:(BTCMnemonicWordListType)type {
     if (type == BTCMnemonicWordListTypeEnglish) {
         return [self englishWordList];
+    }else if (type == BTCMnemonicWordListTypeChinese) {
+        return [self chineseWordList];
     }
 
     return nil;
+}
+
++ (NSArray*) chineseWordList {
+    static NSArray* list;
+    static dispatch_once_t onceToken;
+     dispatch_once(&onceToken, ^{
+         NSString *path = [[NSBundle mainBundle] pathForResource:@"en" ofType:@"lproj"];
+         NSString *plistPath = [[NSBundle bundleWithPath:path]pathForResource:@"BIP39Words" ofType:@"plist"];
+         list = [[NSArray alloc]initWithContentsOfFile:plistPath];
+     });
+    return list;
 }
 
 + (NSArray*) englishWordList {
