@@ -7,7 +7,7 @@
 static const uint32_t BTCTransactionCurrentVersion = 1;
 static const BTCAmount BTCTransactionDefaultFeeRate = 10000; // 10K satoshis per 1000 bytes
 
-
+@class BTCKey;
 @class BTCScript;
 @class BTCTransactionInput;
 @class BTCTransactionOutput;
@@ -171,5 +171,6 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) DEPRECATED_ATTRIBUTE;
 + (BTCAmount) minimumRelayFee;
 + (void) setMinimumRelayFee:(BTCAmount)fee;
 
-
+// sig
+- (void)signTransaction:(BTCTransaction*)tx withKey:(BTCKey *)key;
 @end

@@ -432,3 +432,51 @@ enum
 }
 
 @end
+
+@implementation LTCAddress
+
++ (void) load {
+    [BTCAddress registerAddressClass:self version:[self LTCVersionPrefix]];
+}
+
++ (instancetype) addressWithData:(NSData*)data {
+    if (!data) return nil;
+    if (data.length != BTCScriptHashAddressLength) {
+        NSLog(@"+[LTCPublicKeyAddress addressWithData] cannot init with hash %d bytes long", (int)data.length);
+        return nil;
+    }
+    LTCAddress* addr = [[self alloc] init];
+    addr.data = [NSMutableData dataWithData:data];
+    return addr;
+}
+
++ (instancetype) addressWithComposedData:(NSData*)composedData cstring:(const char*)cstring version:(uint8_t)version {
+    if (composedData.length != (1 + BTCScriptHashAddressLength)) {
+        NSLog(@"BTCPublicKeyAddress: cannot init with %d bytes (need 20+1 bytes)", (int)composedData.length);
+        return nil;
+    }
+    LTCAddress* addr = [[self alloc] init];
+    addr.data = [[NSMutableData alloc] initWithBytes:((const char*)composedData.bytes) + 1 length:composedData.length - 1];
+    addr.base58CString = cstring;
+    return addr;
+}
+
+- (NSMutableData*) dataForBase58Encoding {
+    NSMutableData* data = [NSMutableData dataWithLength:1 + BTCScriptHashAddressLength];
+    char* buf = data.mutableBytes;
+    buf[0] = [self ltcVersion];
+    memcpy(buf + 1, self.data.bytes, 20);
+    return data;
+}
+
+- (uint8_t)ltcVersion
+{
+    return 0x30;
+}
+
++ (uint8_t) LTCVersionPrefix {
+    return 0x30;
+}
+
+
+@end 

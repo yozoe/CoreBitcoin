@@ -8,6 +8,8 @@
 #import "BTCScript.h"
 #import "BTCErrors.h"
 #import "BTCHashID.h"
+#import "BTCKey.h"
+#import "BTCAddress.h"
 
 NSData* BTCTransactionHashFromID(NSString* txid) {
     return BTCHashFromID(txid);
@@ -629,6 +631,32 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     if (minFee < 0 || minFee > BTC_MAX_MONEY) minFee = BTC_MAX_MONEY;
     
     return minFee;
+}
+
+- (void)signTransaction:(BTCTransaction*)tx withKey:(BTCKey *)key
+{
+    uint32_t i = 0;
+    for (BTCTransactionInput *txIn in self.inputs ) {
+        BTCScript* outputScript = txIn.signatureScript;
+        if (key) {
+            NSData* cpk = key.compressedPublicKey;
+//            NSData* ucpk = key.uncompressedPublicKey;
+            
+            BTCSignatureHashType hashtype = SIGHASH_ALL;
+//            NSError * errorOut;
+            NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL];
+            if (!sighash) {
+                return;
+            }
+            
+            // Most common case: P2PKH with compressed pubkey (because of BIP32)
+            BTCScript* p2cpkhScript = [[BTCScript alloc] initWithAddress:[BTCPublicKeyAddress addressWithData:BTCHash160(cpk)]];
+            if ([outputScript.data isEqual:p2cpkhScript.data]) {
+                txIn.signatureScript = [[[BTCScript new] appendData:[key signatureForHash:sighash hashType:hashtype]] appendData:cpk];
+            }
+            i++;
+        }
+    }
 }
 
 
