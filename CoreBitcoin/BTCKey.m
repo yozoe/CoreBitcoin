@@ -3,6 +3,10 @@
 #import "BTCKey.h"
 #import "BTCData.h"
 #import "BTCAddress.h"
+#import "BTCTransaction.h"
+#import "BTCTransactionInput.h"
+#import "BTCScript.h"
+
 #import "BTCCurvePoint.h"
 #import "BTCBigNumber.h"
 #import "BTCProtocolSerialization.h"
@@ -755,6 +759,32 @@ static int     ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const 
 }
 
 
+- (void)signForTransaction:(BTCTransaction *)tx enableForkID:(BOOL)enabledForkID {
+     uint32_t i = 0;
+    for (BTCTransactionInput *txIn in tx.inputs ) {
+        BTCScript* outputScript = txIn.signatureScript;
+        NSData* cpk = self.compressedPublicKey;
+        //            NSData* ucpk = key.uncompressedPublicKey;
+        
+        BTCSignatureHashType hashtype;
+        if ( enabledForkID ) {
+             hashtype = SIGHASH_ALL | SIGHASH_FORKID;
+        }else {
+             hashtype = SIGHASH_ALL;
+        }
+        
+        NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL];
+        if (!sighash) {
+            return;
+        }
+        // Most common case: P2PKH with compressed pubkey (because of BIP32)
+        BTCScript* p2cpkhScript = [[BTCScript alloc] initWithAddress:[BTCPublicKeyAddress addressWithData:BTCHash160(cpk)]];
+        if ([outputScript.data isEqual:p2cpkhScript.data]) {
+            txIn.signatureScript = [[[BTCScript new] appendData:[self signatureForHash:sighash hashType:hashtype]] appendData:cpk];
+        }
+        i++;
+    }
+}
 
 
 
