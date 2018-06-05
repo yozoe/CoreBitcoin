@@ -52,7 +52,8 @@ static const uint32_t BTCMaxSequence = 0xFFFFFFFF;
         if (prevHashString) _previousHash = BTCReversedData(BTCDataFromHex(prevHashString));
         NSNumber* prevIndexNumber = (dictionary[@"prev_out"] ?: @{})[@"n"];
         if (prevIndexNumber) _previousIndex = prevIndexNumber.unsignedIntValue;
-        
+        NSNumber* value = dictionary[@"value"];
+        if (value) _value = value.longLongValue;
         if (dictionary[@"coinbase"]) {
             _coinbaseData = BTCDataFromHex(dictionary[@"coinbase"]);
         } else {
@@ -159,6 +160,9 @@ static const uint32_t BTCMaxSequence = 0xFFFFFFFF;
     
     if (_sequence != BTCMaxSequence) {
         dict[@"sequence"] = [NSString stringWithFormat:@"%08x", _sequence];
+    }
+    if ( _transactionOutput ) {
+        dict[@"value"] = [NSNumber numberWithLongLong:_transactionOutput.value];
     }
     return dict;
 }
