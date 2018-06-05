@@ -1094,7 +1094,7 @@
     // Strip that last byte to have a pure signature.
     signature = [signature subdataWithRange:NSMakeRange(0, signature.length - 1)];
     
-    NSData* sighash = [_transaction signatureHashForScript:subscript inputIndex:_inputIndex hashType:hashType error:errorOut];
+    NSData* sighash = [_transaction signatureHashForScript:subscript inputIndex:_inputIndex hashType:hashType error:errorOut forkIDFlag:NO];
     
     //NSLog(@"BTCScriptMachine: Hash for input %d [%d]: %@", _inputIndex, hashType, BTCHexFromData(sighash));
     

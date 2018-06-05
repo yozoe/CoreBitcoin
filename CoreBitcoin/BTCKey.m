@@ -773,7 +773,7 @@ static int     ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const 
              hashtype = SIGHASH_ALL;
         }
         
-        NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL];
+        NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL forkIDFlag:enabledForkID];
         if (!sighash) {
             return;
         }

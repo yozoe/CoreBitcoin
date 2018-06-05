@@ -341,7 +341,7 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
 
 // Hash for signing a transaction.
 // You should supply the output script of the previous transaction, desired hash type and input index in this transaction.
-- (NSData*) signatureHashForScript:(BTCScript*)subscript inputIndex:(uint32_t)inputIndex hashType:(BTCSignatureHashType)hashType error:(NSError**)errorOut {
+- (NSData*) signatureHashForScript:(BTCScript*)subscript inputIndex:(uint32_t)inputIndex hashType:(BTCSignatureHashType)hashType error:(NSError**)errorOut forkIDFlag:(BOOL)flag {
     // Create a temporary copy of the transaction to apply modifications to it.
     BTCTransaction* tx = [self copy];
     
@@ -431,7 +431,13 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     
     // Important: we have to hash transaction together with its hash type.
     // Hash type is appended as little endian uint32 unlike 1-byte suffix of the signature.
-    NSMutableData* fulldata = [tx.data mutableCopy];
+
+    NSMutableData* fulldata;
+    if ( flag ) {
+        fulldata = [self version0witnessDataWithIdx:inputIndex];
+    }else {
+        fulldata = [tx.data mutableCopy];
+    }
     uint32_t hashType32 = OSSwapHostToLittleInt32((uint32_t)hashType);
     [fulldata appendBytes:&hashType32 length:sizeof(hashType32)];
     
@@ -446,6 +452,66 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
     return hash;
 }
 
+
+- (NSMutableData *)version0witnessDataWithIdx:(uint32_t)idx
+{
+    NSMutableData *payload = [NSMutableData data];
+    // 4-byte version
+    uint32_t ver = _version;
+    [payload appendBytes:&ver length:4];
+    
+    NSMutableData *beforData = [NSMutableData data];
+    NSMutableData *sequence = [NSMutableData data];
+    for (int n = 0; n < self.inputs.count; n++) {
+        BTCTransactionInput *input = self.inputs[n];
+        [beforData appendData:input.previousHash];
+        uint32_t index = input.previousIndex;
+        [beforData appendBytes:&index length:4];
+        
+        uint32_t sq = input.sequence;
+        [sequence appendBytes:&sq length:4];
+    }
+    //hash prevouts
+    NSData *hashOutput = BTCHash256(beforData);
+    [payload appendData:hashOutput];
+    
+    NSData *hashSequence = BTCHash256(sequence);
+    [payload appendData:hashSequence];
+    
+    //out point
+    NSMutableData *outpoint = [NSMutableData data];
+    BTCTransactionInput *input = self.inputs[idx];
+    uint32_t outpointIdx = input.previousIndex;
+    [outpoint appendData:input.previousHash];
+    [outpoint appendBytes:&outpointIdx length:4];
+    [payload appendData:outpoint];
+    
+    //script code
+    NSData* scriptData = input.signatureScript.data;
+    [payload appendData:[BTCProtocolSerialization dataForVarInt:scriptData.length]];
+    [payload appendData:scriptData];
+    
+    //amount
+    BTCAmount amount = input.value;
+    [payload appendBytes:&amount length:sizeof(amount)];
+    //sequen
+    uint32_t sq = input.sequence;
+    [payload appendBytes:&sq length:4];
+    //outputs
+    NSMutableData *hashOutputs = [NSMutableData data];
+    for ( int i = 0 ; i < self.outputs.count; i++ ) {
+        BTCTransactionOutput *output = self.outputs[i];
+        [hashOutputs appendData:output.data];
+    }
+    
+    NSData *output256 = BTCHash256(hashOutputs);
+    [payload appendData:output256];
+    
+    // 4-byte lock_time
+    uint32_t lt = _lockTime;
+    [payload appendBytes:&lt length:4];
+    return payload;
+}
 
 
 
@@ -644,7 +710,7 @@ NSString* BTCTransactionIDFromHash(NSData* txhash) {
             
             BTCSignatureHashType hashtype = SIGHASH_ALL;
 //            NSError * errorOut;
-            NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL];
+            NSData* sighash = [tx signatureHashForScript:[outputScript copy] inputIndex:i hashType:hashtype error:NULL forkIDFlag:NO];
             if (!sighash) {
                 return;
             }

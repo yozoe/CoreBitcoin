@@ -139,10 +139,6 @@
 - (NSData*) signatureForMessage:(NSString*)message;
 - (NSData*) signatureForBinaryMessage:(NSData*)data;
 
-// sign transaction
-
-- (void) signForTransaction:(BTCTransaction*)tx enableForkID:(BOOL)enabledForkID;
-
 // Verifies message against given signature. On success returns a public key.
 + (BTCKey*) verifySignature:(NSData*)signature forMessage:(NSString*)message;
 + (BTCKey*) verifySignature:(NSData*)signature forBinaryMessage:(NSData*)data;
